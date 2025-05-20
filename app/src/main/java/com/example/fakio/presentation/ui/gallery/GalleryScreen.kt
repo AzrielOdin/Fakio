@@ -1,9 +1,7 @@
 package com.example.fakio.presentation.ui.gallery
 
-import android.content.ContentUris
 import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.widget.Toast
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
@@ -29,7 +27,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -64,13 +61,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.fakio.utils.PermissionHandler
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import androidx.compose.material3.FloatingActionButton as FloatingActionButton1
-
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun GalleryScreen(viewModel: GalleryViewModel = viewModel()) {
-    val context = LocalContext.current
     val previewHeight = 300.dp
     val density = LocalDensity.current
 
@@ -80,74 +74,19 @@ fun GalleryScreen(viewModel: GalleryViewModel = viewModel()) {
     val selectedFolder by viewModel.selectedFolder.collectAsState()
     val selectedImageUri by viewModel.selectedImageUri.collectAsState()
 
+
     // Use the permission handler
     PermissionHandler(
         onPermissionsGranted = {
             viewModel.loadMedia()
         },
         permissionsRequiredContent = {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    val isAndroid14Plus =
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
-
-                    Text(
-                        text = if (isAndroid14Plus) {
-                            "Select photos access required"
-                        } else {
-                            "Photos access required"
-                        },
-                        style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = if (isAndroid14Plus) {
-                            "This app needs access to your photos to display them. You can select specific photos to share."
-                        } else {
-                            "This app needs access to your photos to display them in the gallery."
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Placeholder for the permission button
-                    // The actual permission request is handled by the PermissionHandler
-                    Button(onClick = { /* No-op, handled by PermissionHandler */ }) {
-                        Text("Grant Permission")
-                    }
-
-                    if (isAndroid14Plus) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = {
-                                // Launch the photo picker as an alternative (for Android 14+)
-                                Toast.makeText(
-                                    context,
-                                    "Photo picker would launch here",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        ) {
-                            Text("Select Specific Photos")
-                        }
-                    }
-                }
-            }
+            PermissionRequestContent()
         }
     )
 
-    // Only show gallery content if we have permissions (this check is redundant because
-    // PermissionHandler only calls its content if permissions are granted, but it's a safeguard)
+    // Only show gallery content if we have permissions
     if (mediaItems.isNotEmpty()) {
-        // Your gallery UI code
         GalleryContent(
             mediaItems = mediaItems,
             folders = folders,
@@ -158,22 +97,57 @@ fun GalleryScreen(viewModel: GalleryViewModel = viewModel()) {
             density = density
         )
     }
+}
 
-    //TODO move in it's own composable
-    FloatingActionButton1(
-        onClick = {
-            // Handle FAB click - navigate to next screen or process selected image
-            Toast.makeText(context, "Selected image: ${selectedImageUri?.toString() ?: "None"}", Toast.LENGTH_SHORT).show()
-        },
-        modifier = Modifier
-            .padding(16.dp),
-        containerColor = Color.Red
-    ) {
-        Icon(
-            imageVector = Icons.Default.ArrowForward,
-            contentDescription = "Next",
-            tint = Color.White
-        )
+@Composable
+private fun PermissionRequestContent() {
+    val context = LocalContext.current
+    val isAndroid14Plus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = if (isAndroid14Plus) "Select photos access required" else "Photos access required",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = if (isAndroid14Plus) {
+                    "This app needs access to your photos to display them. You can select specific photos to share."
+                } else {
+                    "This app needs access to your photos to display them in the gallery."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(onClick = { /* No-op, handled by PermissionHandler */ }) {
+                Text("Grant Permission")
+            }
+
+            if (isAndroid14Plus) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        Toast.makeText(
+                            context,
+                            "Photo picker would launch here",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                ) {
+                    Text("Select Specific Photos")
+                }
+            }
+        }
     }
 }
 
@@ -188,7 +162,6 @@ private fun GalleryContent(
     density: androidx.compose.ui.unit.Density
 ) {
     var scrollOffset by remember { mutableStateOf(0f) }
-    var dropdownExpanded by remember { mutableStateOf(false) }
 
     // Filter images by selected folder
     val filteredImages = remember(selectedFolder, mediaItems) {
@@ -221,175 +194,103 @@ private fun GalleryContent(
             .nestedScroll(nestedScrollConnection)
     ) {
         // Preview Section
-        Box(
-            modifier = Modifier
-                .height(previewHeight)
-                .fillMaxWidth()
-                .offset(y = previewOffset)
-        ) {
-            // Selected image preview
-            selectedImageUri?.let { uri ->
-                Image(
-                    painter = rememberAsyncImagePainter(model = uri),
-                    contentDescription = "Selected image",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } ?: Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No images found")
-            }
-        }
+        ImagePreviewSection(
+            selectedImageUri = selectedImageUri,
+            previewHeight = previewHeight,
+            previewOffset = previewOffset
+        )
 
         // Grid Section with folder selector
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = previewHeight + previewOffset)
-                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Folder selector
-                selectedFolder?.let { folder ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .clickable { dropdownExpanded = true },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = "Folder",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.size(8.dp))
-
-                        Text(
-                            text = folder.name,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Select folder"
-                        )
-
-                        DropdownMenu(
-                            expanded = dropdownExpanded,
-                            onDismissRequest = { dropdownExpanded = false }
-                        ) {
-                            folders.forEach { folderItem ->
-                                DropdownMenuItem(
-                                    text = { Text(folderItem.name) },
-                                    onClick = {
-                                        viewModel.selectFolder(folderItem)
-                                        dropdownExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Image grid
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(filteredImages) { mediaItem ->
-                        MediaThumbnail(
-                            mediaItem = mediaItem,
-                            isSelected = mediaItem.uri == selectedImageUri,
-                            onClick = { viewModel.selectImage(mediaItem.uri) }
-                        )
-                    }
-                }
-            }
-        }
+        ImagesGridSection(
+            filteredImages = filteredImages,
+            folders = folders,
+            selectedFolder = selectedFolder,
+            selectedImageUri = selectedImageUri,
+            viewModel = viewModel,
+            previewHeight = previewHeight,
+            previewOffset = previewOffset
+        )
     }
 }
 
 @Composable
-fun MediaThumbnail(
-    mediaItem: MediaItem,
-    isSelected: Boolean,
-    onClick: () -> Unit
+private fun ImagePreviewSection(
+    selectedImageUri: Uri?,
+    previewHeight: androidx.compose.ui.unit.Dp,
+    previewOffset: androidx.compose.ui.unit.Dp
 ) {
-    Card(
+    Box(
         modifier = Modifier
+            .height(previewHeight)
             .fillMaxWidth()
-            .aspectRatio(1f)
-            .padding(2.dp)
-            .clickable(onClick = onClick)
+            .offset(y = previewOffset)
     ) {
-        Box {
+        selectedImageUri?.let { uri ->
             Image(
-                painter = rememberAsyncImagePainter(model = mediaItem.uri),
-                contentDescription = mediaItem.name,
+                painter = rememberAsyncImagePainter(model = uri),
+                contentDescription = "Selected image",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.3f))
-                )
-            }
+        } ?: Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("No images found")
         }
     }
 }
 
-
-@Preview(
-    name = "Gallery Screen",
-    showBackground = true,
-    showSystemUi = true
-)
 @Composable
-fun GalleryScreenPreview() {
-    // Create a simple preview with mock data
-    val previewImageUri = Uri.parse("https://placekitten.com/200/300")
+private fun ImagesGridSection(
+    filteredImages: List<MediaItem>,
+    folders: List<MediaFolder>,
+    selectedFolder: MediaFolder?,
+    selectedImageUri: Uri?,
+    viewModel: GalleryViewModel,
+    previewHeight: androidx.compose.ui.unit.Dp,
+    previewOffset: androidx.compose.ui.unit.Dp
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = previewHeight + previewOffset)
+            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Folder selector
+            FolderSelector(
+                folders = folders,
+                selectedFolder = selectedFolder,
+                onFolderSelected = viewModel::selectFolder
+            )
 
-    // Sample data for preview
-    val mediaItems = listOf(
-        MediaItem(1L, previewImageUri, "Cat 1", "Cats"),
-        MediaItem(2L, previewImageUri, "Cat 2", "Cats"),
-        MediaItem(3L, previewImageUri, "Cat 3", "Cats"),
-        MediaItem(4L, previewImageUri, "Dog 1", "Dogs"),
-        MediaItem(5L, previewImageUri, "Dog 2", "Dogs")
-    )
-
-
-    // Create a mock UI that resembles the gallery screen
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Preview area (simplified)
-        Box(
-            modifier = Modifier
-                .height(300.dp)
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Image Preview Area", style = MaterialTheme.typography.bodyLarge)
+            // Image grid
+            ImagesGrid(
+                images = filteredImages,
+                selectedImageUri = selectedImageUri,
+                onImageSelected = viewModel::selectImage
+            )
         }
+    }
+}
 
-        // Folder selector (simplified)
+@Composable
+private fun FolderSelector(
+    folders: List<MediaFolder>,
+    selectedFolder: MediaFolder?,
+    onFolderSelected: (MediaFolder) -> Unit
+) {
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
+    selectedFolder?.let { folder ->
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .clickable { dropdownExpanded = true },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -398,43 +299,74 @@ fun GalleryScreenPreview() {
                 tint = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.size(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "Cats",
-                style = MaterialTheme.typography.titleMedium
+                text = folder.name,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
             )
-
-            Spacer(modifier = Modifier.width(4.dp))
 
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = "Select folder"
             )
-        }
 
-        // Grid preview (simplified)
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            contentPadding = PaddingValues(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(mediaItems) { mediaItem ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .padding(2.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(mediaItem.name, style = MaterialTheme.typography.bodySmall)
+            DropdownMenu(
+                expanded = dropdownExpanded,
+                onDismissRequest = { dropdownExpanded = false }
+            ) {
+                folders.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(item.name) },
+                        onClick = {
+                            onFolderSelected(item)
+                            dropdownExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ImagesGrid(
+    images: List<MediaItem>,
+    selectedImageUri: Uri?,
+    onImageSelected: (Uri) -> Unit
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        contentPadding = PaddingValues(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        items(images) { item ->
+            val isSelected = selectedImageUri == item.uri
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onImageSelected(item.uri) },
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Box {
+                    Image(
+                        painter = rememberAsyncImagePainter(model = item.uri),
+                        contentDescription = item.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    if (isSelected) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.3f))
+                        )
                     }
                 }
             }
@@ -442,3 +374,10 @@ fun GalleryScreenPreview() {
     }
 }
 
+@Preview
+@Composable
+private fun PermissionRequestPreview() {
+    MaterialTheme {
+        PermissionRequestContent()
+    }
+}

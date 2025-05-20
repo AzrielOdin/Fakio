@@ -5,6 +5,8 @@ package com.example.fakio.presentation.navigation
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Favorite
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,22 +48,28 @@ fun DrawerContent(
     currentRoute: String?,
     onDestinationClicked: (String) -> Unit
 ) {
-    ModalDrawerSheet {
+    ModalDrawerSheet(
+        // Set explicit width to control drawer size
+        modifier = Modifier.width(280.dp),
+        // Smoother edges with proper shape
+        drawerShape = RoundedCornerShape(topEnd = 0.dp, bottomEnd = 0.dp),
+        drawerContainerColor = MaterialTheme.colorScheme.surface,
+        drawerContentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = "Gallery App",
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(16.dp)
         )
-        Divider()
-
+        HorizontalDivider()
         Screen.drawerItems.forEach { screen ->
             NavigationDrawerItem(
                 icon = { Icon(screen.icon, contentDescription = null) },
                 label = { Text(screen.title) },
                 selected = currentRoute == screen.route,
                 onClick = { onDestinationClicked(screen.route) },
-                modifier = Modifier.padding(horizontal = 12.dp)
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }
     }

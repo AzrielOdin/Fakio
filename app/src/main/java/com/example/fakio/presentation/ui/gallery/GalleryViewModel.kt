@@ -4,8 +4,10 @@ import android.app.Application
 import android.content.ContentUris
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fakio.data.repository.UploadRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +31,11 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     private val _selectedImageUri = MutableStateFlow<Uri?>(null)
     val selectedImageUri: StateFlow<Uri?> = _selectedImageUri.asStateFlow()
 
+    private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
+    val uploadState: StateFlow<UploadState> = _uploadState.asStateFlow()
+
+    private val uploadRepository = UploadRepository(application.applicationContext)
+
     init {
         loadMedia()
     }
@@ -51,6 +58,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
 
             if (images.isNotEmpty() && _selectedImageUri.value == null) {
                 _selectedImageUri.value = images.first().uri
+                Log.d("Fakio bug", "Initial selected image: ${_selectedImageUri.value}")
             }
         }
     }
@@ -60,7 +68,9 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun selectImage(uri: Uri) {
+        Log.d("Fakio bug", "Previous selected image: ${_selectedImageUri.value}")
         _selectedImageUri.value = uri
+        Log.d("Fakio bug", "New selected image: ${_selectedImageUri.value}")
     }
 
     // Function to load images from MediaStore
@@ -109,5 +119,32 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         return _selectedFolder.value?.let { folder ->
             _mediaItems.value.filter { it.folderId == folder.id }
         } ?: _mediaItems.value
+    }
+
+    fun uploadSelectedImage() {
+        // Get the current selected URI
+        val uri = _selectedImageUri.value ?: return
+
+        Log.d("Fakio bug", "Uploading image: $uri")
+
+        viewModelScope.launch {
+            _uploadState.value = UploadState.Loading
+
+            uploadRepository.uploadImage(uri).fold(
+                onSuccess = { response ->
+                    _uploadState.value = UploadState.Success(response.message)
+                },
+                onFailure = { exception ->
+                    _uploadState.value = UploadState.Error(exception.message ?: "Unknown error")
+                }
+            )
+        }
+    }
+
+    sealed class UploadState {
+        object Idle : UploadState()
+        object Loading : UploadState()
+        data class Success(val message: String) : UploadState()
+        data class Error(val message: String) : UploadState()
     }
 }
