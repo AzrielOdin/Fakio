@@ -46,20 +46,16 @@ fun PermissionHandler(
         }
     }
 
-    // Create permission state
     val permissionsState = rememberMultiplePermissionsState(
         permissions = mediaPermissions
     )
 
-    // State to track if settings dialog should be shown
     var showSettingsDialog by remember { mutableStateOf(false) }
 
-    // Check if any permission was permanently denied
     val permissionsPermanentlyDenied = permissionsState.permissions.any {
         !it.status.isGranted && !it.status.shouldShowRationale
     }
 
-    // Handle permission result
     LaunchedEffect(permissionsState.allPermissionsGranted, permissionsPermanentlyDenied) {
         when {
             permissionsState.allPermissionsGranted -> {
@@ -71,14 +67,12 @@ fun PermissionHandler(
         }
     }
 
-    // Request permissions on first launch
     LaunchedEffect(Unit) {
         if (!permissionsState.allPermissionsGranted) {
             permissionsState.launchMultiplePermissionRequest()
         }
     }
 
-    // If permissions aren't granted, show permission UI
     if (!permissionsState.allPermissionsGranted) {
         if (showSettingsDialog) {
             SettingsDialog(

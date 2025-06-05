@@ -62,7 +62,6 @@ dependencies {
 
     implementation(libs.bundles.networking)
 
-    // 3) Everything else pulled in directly
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
     implementation(libs.accompanist.navigation.material)

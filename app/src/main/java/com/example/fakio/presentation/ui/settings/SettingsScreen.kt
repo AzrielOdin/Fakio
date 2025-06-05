@@ -51,7 +51,6 @@ fun SettingsScreen() {
             modifier = Modifier.padding(vertical = 16.dp)
         )
 
-        // Network Section
         SectionTitle("Network")
 
         var wifiOnlyEnabled by remember { mutableStateOf(true) }
@@ -65,7 +64,6 @@ fun SettingsScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Help Section
         SectionTitle("Help")
 
         SettingsItem(
@@ -94,7 +92,6 @@ fun SettingsScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // About Section
         SectionTitle("About")
 
         SettingsItem(

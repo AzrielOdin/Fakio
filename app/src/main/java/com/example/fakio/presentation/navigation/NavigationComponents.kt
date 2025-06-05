@@ -49,9 +49,7 @@ fun DrawerContent(
     onDestinationClicked: (String) -> Unit
 ) {
     ModalDrawerSheet(
-        // Set explicit width to control drawer size
         modifier = Modifier.width(280.dp),
-        // Smoother edges with proper shape
         drawerShape = RoundedCornerShape(topEnd = 0.dp, bottomEnd = 0.dp),
         drawerContainerColor = MaterialTheme.colorScheme.surface,
         drawerContentColor = MaterialTheme.colorScheme.onSurface,
@@ -74,7 +72,6 @@ fun DrawerContent(
         }
     }
 }
-// In NavigationComponents.kt, update the Screen class:
 sealed class Screen(
     val route: String,
     val title: String,
@@ -84,9 +81,7 @@ sealed class Screen(
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
 
     companion object {
-        // Remove Gallery from drawer items
         val drawerItems = listOf(Settings)
-        // Keep all items for other uses
         val items = listOf(Gallery, Settings)
     }
 }

@@ -15,7 +15,6 @@ object NetworkModule {
     private const val SERVER_URL = "http://192.168.87.166:5000/"
     private const val TIMEOUT_SECONDS = 30L
 
-    // Logging interceptor for debugging
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
@@ -24,7 +23,6 @@ object NetworkModule {
         .add(KotlinJsonAdapterFactory())
         .build()
 
-    // Custom headers interceptor - can be used to add auth headers later if needed
     private val headerInterceptor = Interceptor { chain ->
         val request = chain.request().newBuilder()
             .addHeader("Content-Type", "multipart/form-data")
@@ -33,21 +31,17 @@ object NetworkModule {
         chain.proceed(request)
     }
 
-    // Error handling interceptor - can be expanded as needed
     private val errorInterceptor = Interceptor { chain ->
         try {
             val response = chain.proceed(chain.request())
             if (!response.isSuccessful) {
-                // Log or handle errors based on response code
             }
             response
         } catch (e: Exception) {
-            // Handle network exceptions
             throw e
         }
     }
 
-    // Build OkHttpClient with all interceptors
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(headerInterceptor)
         .addInterceptor(errorInterceptor)
@@ -57,13 +51,11 @@ object NetworkModule {
         .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
 
-    // Create Retrofit instance
     private val retrofit = Retrofit.Builder()
         .baseUrl(SERVER_URL)
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
 
-    // Create service
     val uploadService: UploadService = retrofit.create(UploadService::class.java)
 }

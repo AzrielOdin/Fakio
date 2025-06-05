@@ -45,13 +45,11 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
             val images = loadImagesFromMediaStore()
             _mediaItems.value = images
 
-            // Extract unique folders
             val uniqueFolders = images
                 .map { MediaFolder(it.folderId, it.folderId) }
                 .distinctBy { it.id }
             _folders.value = uniqueFolders
 
-            // Set initial selections
             if (uniqueFolders.isNotEmpty() && _selectedFolder.value == null) {
                 _selectedFolder.value = uniqueFolders.first()
             }
@@ -73,7 +71,6 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         Log.d("Fakio bug", "New selected image: ${_selectedImageUri.value}")
     }
 
-    // Function to load images from MediaStore
     private fun loadImagesFromMediaStore(): List<MediaItem> {
         val images = mutableListOf<MediaItem>()
         val context = getApplication<Application>()
@@ -114,7 +111,6 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         return images
     }
 
-    // Get filtered images based on selected folder
     fun getFilteredImages(): List<MediaItem> {
         return _selectedFolder.value?.let { folder ->
             _mediaItems.value.filter { it.folderId == folder.id }
@@ -122,7 +118,6 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun uploadSelectedImage() {
-        // Get the current selected URI
         val uri = _selectedImageUri.value ?: return
 
         Log.d("Fakio bug", "Uploading image: $uri")

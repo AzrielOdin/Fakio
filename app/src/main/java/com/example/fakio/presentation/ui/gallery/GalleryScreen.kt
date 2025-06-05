@@ -68,14 +68,12 @@ fun GalleryScreen(viewModel: GalleryViewModel = viewModel()) {
     val previewHeight = 300.dp
     val density = LocalDensity.current
 
-    // States from the ViewModel
     val mediaItems by viewModel.mediaItems.collectAsState()
     val folders by viewModel.folders.collectAsState()
     val selectedFolder by viewModel.selectedFolder.collectAsState()
     val selectedImageUri by viewModel.selectedImageUri.collectAsState()
 
 
-    // Use the permission handler
     PermissionHandler(
         onPermissionsGranted = {
             viewModel.loadMedia()
@@ -85,7 +83,6 @@ fun GalleryScreen(viewModel: GalleryViewModel = viewModel()) {
         }
     )
 
-    // Only show gallery content if we have permissions
     if (mediaItems.isNotEmpty()) {
         GalleryContent(
             mediaItems = mediaItems,
@@ -163,14 +160,12 @@ private fun GalleryContent(
 ) {
     var scrollOffset by remember { mutableStateOf(0f) }
 
-    // Filter images by selected folder
     val filteredImages = remember(selectedFolder, mediaItems) {
         selectedFolder?.let { folder ->
             mediaItems.filter { it.folderId == folder.id }
         } ?: mediaItems
     }
 
-    // Nested scroll connection for sliding behavior
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -182,7 +177,6 @@ private fun GalleryContent(
         }
     }
 
-    // Calculate offset animation
     val previewOffset by animateDpAsState(
         targetValue = with(density) { scrollOffset.toDp() },
         label = "previewOffset"
@@ -193,14 +187,12 @@ private fun GalleryContent(
             .fillMaxSize()
             .nestedScroll(nestedScrollConnection)
     ) {
-        // Preview Section
         ImagePreviewSection(
             selectedImageUri = selectedImageUri,
             previewHeight = previewHeight,
             previewOffset = previewOffset
         )
 
-        // Grid Section with folder selector
         ImagesGridSection(
             filteredImages = filteredImages,
             folders = folders,
@@ -260,14 +252,12 @@ private fun ImagesGridSection(
             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Folder selector
             FolderSelector(
                 folders = folders,
                 selectedFolder = selectedFolder,
                 onFolderSelected = viewModel::selectFolder
             )
 
-            // Image grid
             ImagesGrid(
                 images = filteredImages,
                 selectedImageUri = selectedImageUri,

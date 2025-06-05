@@ -43,12 +43,10 @@ fun MyApp() {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val galleryViewModel: GalleryViewModel = viewModel()
 
-    // Track the upload state from ViewModel
     val uploadState: State<GalleryViewModel.UploadState> =
         galleryViewModel.uploadState.collectAsState()
     val uploadStateValue = uploadState.value
 
-    // Create a SnackbarHostState to show snackbars
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uploadStateValue) {
@@ -76,12 +74,9 @@ fun MyApp() {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        // Add animation specifications to make the drawer movement smoother
         gesturesEnabled = true,
-        // Scrim color with alpha for better visual feedback
         scrimColor = Color.Black.copy(alpha = 0.32f),
         drawerContent = {
-            // Updated DrawerContent call to include width constraint
             DrawerContent(
                 currentRoute = currentRoute,
                 onDestinationClicked = { route ->
@@ -130,7 +125,6 @@ fun MyApp() {
                 startDestination = Screen.Gallery.route,
                 modifier = Modifier.padding(paddingValues)
             ) {
-                // Simply define composables directly in the NavHost builder
                 composable(route = Screen.Gallery.route) {
                     GalleryScreen(galleryViewModel)
                 }
